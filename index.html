@@ -1,0 +1,566 @@
+<title>범용 멀티 에이전트</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@300;400;500;600;700&display=swap">
+
+<style>
+  :root {
+    --ink:    #15171c;
+    --ink-2:  #3d4350;
+    --muted:  #6d7686;
+    --faint:  #98a1b0;
+    --line:   #dfe3ea;
+    --paper:  #ffffff;
+    --panel:  #f5f7fa;
+    --accent: #b45309;
+    --accent-soft: #fdf6ec;
+
+    --web:  #2563eb;  --web-bg:  #eff6ff;  --web-line:  #bfdbfe;
+    --rag:  #7c3aed;  --rag-bg:  #f5f3ff;  --rag-line:  #ddd6fe;
+    --file: #059669;  --file-bg: #ecfdf5;  --file-line: #a7f3d0;
+
+    --sans: 'IBM Plex Sans KR', 'Malgun Gothic', system-ui, sans-serif;
+    --mono: 'IBM Plex Mono', 'D2Coding', ui-monospace, monospace;
+  }
+
+  body {
+    margin: 0;
+    background: #e8ebf0;
+    color: var(--ink);
+    font-family: var(--sans);
+    font-weight: 400;
+    overflow: hidden;
+  }
+
+  /* ── 스테이지: 1280×720을 뷰포트에 맞춰 축소 ───────── */
+  #frame {
+    position: fixed; inset: 0;
+    display: grid; place-items: center;
+    padding: 16px;
+    box-sizing: border-box;
+  }
+  #stage {
+    width: 1280px; height: 720px;
+    flex: none;
+    transform: scale(var(--s, 1));
+    transform-origin: center center;
+    background: var(--paper);
+    box-shadow: 0 2px 40px rgba(21,23,28,.18);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .slide {
+    position: absolute; inset: 0;
+    padding: 46px 60px 62px;
+    box-sizing: border-box;
+    display: flex; flex-direction: column;
+  }
+  .slide[hidden] { display: none !important; }
+
+  /* ── 슬라이드 머리 ─────────────────────────────────── */
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 12px; font-weight: 500;
+    letter-spacing: .14em; text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 14px;
+  }
+  h1 {
+    font-size: 52px; font-weight: 600; line-height: 1.12;
+    letter-spacing: -.025em; text-wrap: balance;
+    margin: 0;
+  }
+  h2 {
+    font-size: 38px; font-weight: 600; line-height: 1.18;
+    letter-spacing: -.022em; text-wrap: balance;
+    margin: 0 0 6px;
+  }
+  .dek {
+    font-size: 17px; line-height: 1.55; color: var(--muted);
+    margin: 0 0 26px; white-space: nowrap;
+  }
+  .body { flex: 1; min-height: 0; }
+
+  code, .m { font-family: var(--mono); font-size: .92em; }
+  code {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 3px; padding: 1px 5px; color: var(--ink-2);
+  }
+  strong { font-weight: 600; }
+
+  /* ── 페이지 꼬리 ───────────────────────────────────── */
+  .foot {
+    position: absolute; left: 60px; right: 60px; bottom: 26px;
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-family: var(--mono); font-size: 11.5px;
+    letter-spacing: .06em; color: var(--faint);
+    border-top: 1px solid var(--line); padding-top: 12px;
+  }
+  .foot .no { color: var(--ink-2); font-weight: 500; }
+
+  /* ── 표지 ──────────────────────────────────────────── */
+  .cover { justify-content: center; }
+  .cover h1 { font-size: 66px; letter-spacing: -.032em; }
+  .rule {
+    width: 72px; height: 3px; background: var(--accent);
+    margin: 0 0 30px;
+  }
+  .axes { display: flex; gap: 10px; margin: 34px 0 0; }
+  .axis-tag {
+    font-family: var(--mono); font-size: 13px; font-weight: 500;
+    padding: 7px 14px; border-radius: 3px;
+  }
+  .t-web  { background: var(--web-bg);  color: var(--web);  border: 1px solid var(--web-line); }
+  .t-rag  { background: var(--rag-bg);  color: var(--rag);  border: 1px solid var(--rag-line); }
+  .t-file { background: var(--file-bg); color: var(--file); border: 1px solid var(--file-line); }
+
+  /* ── 공통 조판 ─────────────────────────────────────── */
+  .cols { display: grid; gap: 26px; }
+  .c2 { grid-template-columns: 1fr 1fr; }
+  .c2u { grid-template-columns: 1.15fr 1fr; }
+  .c3 { grid-template-columns: repeat(3, 1fr); }
+
+  .panel {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 6px; padding: 20px 22px;
+    display: flex; flex-direction: column; gap: 9px;
+  }
+  .panel.lift { background: var(--accent-soft); border-color: #f0d9b8; }
+  .panel h3 {
+    font-size: 15px; font-weight: 600; margin: 0;
+    letter-spacing: -.008em;
+  }
+  .panel p { font-size: 14.5px; line-height: 1.58; color: var(--ink-2); margin: 0; }
+  .panel .note { font-size: 13px; color: var(--muted); }
+
+  .label {
+    font-family: var(--mono); font-size: 11px; font-weight: 500;
+    letter-spacing: .12em; text-transform: uppercase; color: var(--faint);
+    margin: 0;
+  }
+
+  ul.pts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 15px; }
+  ul.pts li {
+    font-size: 16px; line-height: 1.55; color: var(--ink-2);
+    padding-left: 20px; position: relative;
+  }
+  ul.pts li::before {
+    content: ""; position: absolute; left: 0; top: 10px;
+    width: 7px; height: 7px; border-radius: 50%; background: var(--accent);
+  }
+  ul.pts li b { color: var(--ink); font-weight: 600; }
+
+  pre {
+    font-family: var(--mono); font-size: 13.5px; line-height: 1.62;
+    background: #1b1f27; color: #dbe1ea;
+    border-radius: 5px; padding: 15px 17px; margin: 0;
+    overflow-x: auto; white-space: pre;
+  }
+  pre .bad  { color: #fca5a5; }
+  pre .good { color: #86efac; }
+  pre .dim  { color: #7d8799; }
+  pre .key  { color: #fcd34d; }
+
+  table.kv { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+  table.kv th, table.kv td {
+    text-align: left; padding: 9px 12px 9px 0;
+    border-bottom: 1px solid var(--line); vertical-align: top;
+  }
+  table.kv th { font-weight: 600; color: var(--ink); width: 34%; }
+  table.kv td { color: var(--ink-2); }
+  table.kv tr:last-child th, table.kv tr:last-child td { border-bottom: none; }
+  .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+  .stat { display: flex; align-items: baseline; gap: 9px; }
+  .stat .big {
+    font-family: var(--mono); font-size: 34px; font-weight: 600;
+    letter-spacing: -.02em; color: var(--ink); font-variant-numeric: tabular-nums;
+  }
+  .stat .unit { font-size: 14px; color: var(--muted); }
+
+  .diagram { flex: 1; display: grid; place-items: center; min-height: 0; }
+  .diagram img { max-width: 100%; max-height: 100%; object-fit: contain; }
+
+  .srcline { display: flex; gap: 9px; align-items: flex-start; font-size: 14px; line-height: 1.5; }
+  .chip {
+    font-family: var(--mono); font-size: 11px; font-weight: 500;
+    padding: 3px 8px; border-radius: 3px; flex: none; margin-top: 1px;
+  }
+
+  .quote {
+    border-left: 3px solid var(--accent); padding: 4px 0 4px 16px;
+    font-size: 16px; line-height: 1.6; color: var(--ink-2);
+  }
+
+  /* ── 조작부 ────────────────────────────────────────── */
+  #hud {
+    position: fixed; right: 18px; bottom: 16px;
+    display: flex; align-items: center; gap: 6px;
+    font-family: var(--mono); font-size: 12px; color: #5b6472;
+  }
+  #hud button {
+    font: inherit; color: inherit; cursor: pointer;
+    background: rgba(255,255,255,.92); border: 1px solid #c9cfd9;
+    border-radius: 4px; width: 28px; height: 26px; line-height: 1;
+  }
+  #hud button:hover { background: #fff; border-color: var(--accent); color: var(--accent); }
+  #hud button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  #count { font-variant-numeric: tabular-nums; padding: 0 4px; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .slide { animation: in .22s ease-out; }
+    @keyframes in { from { opacity: 0; } to { opacity: 1; } }
+  }
+
+  @media print {
+    @page { size: 1280px 720px; margin: 0; }
+    body { background: #fff; overflow: visible; }
+    #frame { position: static; display: block; padding: 0; }
+    #stage { transform: none !important; box-shadow: none; width: 1280px; height: auto; }
+    .slide {
+      position: relative; display: flex !important; inset: auto;
+      width: 1280px; height: 720px; page-break-after: always;
+    }
+    #hud { display: none; }
+  }
+</style>
+
+<div id="frame">
+  <div id="stage">
+
+    <!-- ══ 1. 표지 ══════════════════════════════════════ -->
+    <section class="slide cover">
+      <div class="rule"></div>
+      <h1>범용 멀티 에이전트</h1>
+      <p class="dek" style="font-size:20px;margin-top:18px">
+        한 문장을 슈퍼바이저가 작업으로 쪼개, 세 축의 에이전트에게 맡기고, 근거와 함께 하나의 답변으로 통합한다.
+      </p>
+      <div class="axes">
+        <span class="axis-tag t-web">웹 검색</span>
+        <span class="axis-tag t-rag">문서 RAG</span>
+        <span class="axis-tag t-file">파일 관리</span>
+      </div>
+      <div class="foot"><span>범용 멀티 에이전트</span><span class="no">01</span></div>
+    </section>
+
+    <!-- ══ 2. 문제 ══════════════════════════════════════ -->
+    <section class="slide" hidden>
+      <p class="eyebrow">문제</p>
+      <h2>요청 하나가 세 시스템에 걸쳐 있다</h2>
+      <p class="dek">사람이 일하는 방식은 한 도구에 갇혀 있지 않다. 그런데 챗봇은 한 도구에 갇혀 있다.</p>
+      <div class="body">
+        <div class="quote" style="margin-bottom:30px">
+          “첨부한 리포트에서 하반기 동남아 진출 계획을 찾고, 웹에서 동남아 물류 시장 최신 동향을
+          찾아서, 비교해서 <span class="m">strategy_brief.md</span>로 저장해줘”
+        </div>
+        <div class="cols c2">
+          <div class="panel">
+            <p class="label">일반 챗봇</p>
+            <h3>말로 끝난다</h3>
+            <p>문서를 못 읽고, 지금 웹을 못 보고, 파일을 못 쓴다.
+               “이런 계획을 세우시면 좋겠습니다”라고 <strong>대답만</strong> 한다.</p>
+          </div>
+          <div class="panel lift">
+            <p class="label">필요한 것</p>
+            <h3>세 축 + 순서를 스스로 짜는 층</h3>
+            <p>사용자는 <strong>순서를 지정하지 않는다.</strong> “먼저 PDF 보고, 그다음 웹 찾고,
+               마지막에 저장해”라고 말하지 않는다. 그 분해를 시스템이 해야 한다.</p>
+          </div>
+        </div>
+      </div>
+      <div class="foot"><span>문제 정의</span><span class="no">02</span></div>
+    </section>
+
+    <!-- ══ 3. 출발점 → 지금 ═════════════════════════════ -->
+    <section class="slide" hidden>
+      <p class="eyebrow">출발점 → 지금</p>
+      <h2>그래프 하나에서 라우팅되는 그래프로</h2>
+      <p class="dek">CHAP6~9에서 배운 패턴을 조합했고, <span class="m">quiz_generator</span>에서 검증된 모듈(<span class="m">retriever</span>, <span class="m">ocr_*</span>)을 그대로 이식했다.</p>
+      <div class="body">
+        <div class="cols c2">
+          <div class="panel">
+            <p class="label">AGENTSTUDY / app.py</p>
+            <div class="stat"><span class="big">182</span><span class="unit">줄 · 단일 그래프</span></div>
+            <p>노드가 고정된 순서로 한 번 흐른다. 검색하고, 답한다.
+               되돌아가는 길이 없으니 <strong>틀려도 고칠 기회가 없다.</strong></p>
+          </div>
+          <div class="panel lift">
+            <p class="label">universal_agent</p>
+            <div class="stat"><span class="big">2,307</span><span class="unit">줄 · 3축 + 검증 루프</span></div>
+            <p>계획을 세우고, 축을 고르고, 결과를 검증하고,
+               <strong>부족하면 되돌아간다.</strong> 박스가 아니라 <em>루프</em>가 설계다.</p>
+          </div>
+        </div>
+        <table class="kv" style="margin-top:26px">
+          <tr><th>재사용한 골격</th>
+              <td><span class="m">planning → supervisor → worker → validate</span> — <span class="m">quiz_generator</span>와 동일. 도메인만 갈아 끼웠다.</td></tr>
+          <tr><th>코드째 이식</th>
+              <td><span class="m">retriever.py</span> (PDF 인제스트·검색), <span class="m">ocr_server/client.py</span> (스캔 PDF OCR MCP)</td></tr>
+        </table>
+      </div>
+      <div class="foot"><span>출발점 → 지금</span><span class="no">03</span></div>
+    </section>
+
+    <!-- ══ 4. 아키텍처 ══════════════════════════════════ -->
+    <section class="slide" hidden>
+      <p class="eyebrow">아키텍처</p>
+      <h2 style="margin-bottom:14px">박스보다 <span style="color:var(--accent)">선</span>을 보세요</h2>
+      <div class="diagram">
+        <img src="architecture-slide.svg" alt="범용 멀티 에이전트 아키텍처 — planning에서 supervisor를 거쳐 웹 검색·문서 검색·파일 관리 세 축으로 갈라지고, validate를 지나 supervisor로 돌아오거나 같은 축으로 재시도하며, plan이 비면 final로 간다">
+      </div>
+      <div class="foot"><span>아키텍처</span><span class="no">04</span></div>
+    </section>
+
+    <!-- ══ 5. 실행 추적 ═════════════════════════════════ -->
+    <section class="slide" hidden>
+      <p class="eyebrow">실측</p>
+      <h2>한 문장이 세 축을 통과했다</h2>
+      <p class="dek">생성된 <span class="m">strategy_brief.md</span>의 문장을 출처별로 갈라 보면 이렇다.</p>
+      <div class="body">
+        <div class="cols c3">
+          <div class="panel" style="border-color:var(--rag-line);background:var(--rag-bg)">
+            <span class="chip" style="background:#fff;color:var(--rag);border:1px solid var(--rag-line);align-self:flex-start">문서 RAG</span>
+            <h3 style="color:#4c1d95">“목표 연매출 680억원”</h3>
+            <p style="color:#6d28d9">업로드한 PDF 안에만 있는 사실. <span class="m">p.4</span> 인용까지 붙는다.</p>
+          </div>
+          <div class="panel" style="border-color:var(--web-line);background:var(--web-bg)">
+            <span class="chip" style="background:#fff;color:var(--web);border:1px solid var(--web-line);align-self:flex-start">웹 검색</span>
+            <h3 style="color:#1e3a8a">“물류성과지수 아세안 5위권”</h3>
+            <p style="color:#1d4ed8">PDF에 없다. Tavily가 방금 가져온 것.</p>
+          </div>
+          <div class="panel" style="border-color:var(--file-line);background:var(--file-bg)">
+            <span class="chip" style="background:#fff;color:var(--file);border:1px solid var(--file-line);align-self:flex-start">파일 관리</span>
+            <h3 style="color:#064e3b">파일이 실제로 생성됐다</h3>
+            <p style="color:#047857">MCP <span class="m">write_file</span> — 말이 아니라 부작용(side effect).</p>
+          </div>
+        </div>
+        <div class="panel lift" style="margin-top:24px">
+          <h3>이어 붙인 게 아니라 섞었다</h3>
+          <p>“AI 기반 배차 추천 기능은 <strong>디지털 전환이 빠르게 진행 중인 베트남 시장에서</strong> 경쟁력을 갖출 수 있는…”
+             — 앞 절반은 PDF, 뒤 절반은 웹. <strong>원문 어디에도 없던 문장</strong>이다.
+             3단계 워커가 1·2단계 결과를 봤다는 뜻이고, 그게 다음 장의 이야기다.</p>
+        </div>
+      </div>
+      <div class="foot"><span>실행 추적</span><span class="no">05</span></div>
+    </section>
+
+    <!-- ══ 6. 인사이트 ① ════════════════════════════════ -->
+    <section class="slide" hidden>
+      <p class="eyebrow">인사이트 1 / 3</p>
+      <h2><span class="m" style="font-size:.86em">success: True</span>가 “맞다”는 뜻은 아니다</h2>
+      <p class="dek">“회의록을 읽고 요약해서 <span class="m">summary.md</span>로 저장해줘” — 도구 호출은 전부 성공했다.</p>
+      <div class="body cols c2u" style="display:grid">
+        <div>
+          <pre>답변:        <span class="good">"회의록을 요약하여 summary.md에 저장했습니다"</span>
+
+summary.md:  <span class="bad">"이 파일은 작업 폴더의 파일 관리 에이전트가
+              수행한 작업을 요약한 것입니다…"</span>
+             <span class="dim">↑ 회의록이 아니라 자기 시스템 프롬프트를 요약</span>
+
+도구 결과:    <span class="key">{ "success": true }</span>  <span class="dim">← 검증도 통과</span></pre>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div class="panel">
+            <h3>원인</h3>
+            <p>계획은 <span class="m">[읽기, 요약·저장]</span> 2단계인데
+               <strong>2단계가 1단계 결과를 볼 수 없었다.</strong>
+               각 워커는 호출될 때마다 <strong>빈 대화로 시작</strong>한다.
+               읽어 온 내용이 없으니 모델은 눈앞의 유일한 텍스트 — 자기 시스템 프롬프트 — 를 요약했다.</p>
+          </div>
+          <div class="panel lift">
+            <h3>배운 것</h3>
+            <p><span class="m">success: True</span>는 “쓰기가 성공했다”는 뜻이지
+               <strong>“쓴 내용이 맞다”는 뜻이 아니다.</strong>
+               가장 무서운 실패는 에러를 내지 않는다.</p>
+            <p class="note">해결: <span class="m">_prior_context()</span>로 앞 단계 결과를 다음 워커 입력에 주입</p>
+          </div>
+        </div>
+      </div>
+      <div class="foot"><span>인사이트 ① 침묵하는 실패</span><span class="no">06</span></div>
+    </section>
+
+    <!-- ══ 7. 인사이트 ② ════════════════════════════════ -->
+    <section class="slide" hidden>
+      <p class="eyebrow">인사이트 2 / 3</p>
+      <h2>근거를 자기 자신과 대조할 수는 없다</h2>
+      <p class="dek">웹 축을 처음 켰을 때 Tavily가 4건을 제대로 가져왔는데 <strong>검증이 12건을 전부 탈락</strong>시켰다. (4건 × 재시도 3회)</p>
+      <div class="body">
+        <div class="cols c2">
+          <div class="panel">
+            <p class="label">잘못 건 검사</p>
+            <h3>검색 결과에 환각 검사</h3>
+            <p>“이 결과가 근거 자료에 기반하나?” — 그런데 검색 결과는 에이전트가 지어낸 주장이 아니라
+               <strong>근거 자료 그 자체</strong>다. 질문이 성립하지 않는다.</p>
+            <p class="note">모델은 판단할 게 없으니 엉뚱한 기준(“제목과 본문이 안 맞는다”)으로 떨어뜨렸다.</p>
+          </div>
+          <div class="panel lift">
+            <p class="label">CHAP6에는 평가자가 둘이었다</p>
+            <h3>대상이 다르면 질문도 다르다</h3>
+            <table class="kv" style="font-size:13.5px">
+              <tr><th style="width:42%"><span class="m">Relevance</span></th>
+                  <td>검색해 온 <strong>자료</strong> — 질문과 관련 있나?</td></tr>
+              <tr><th><span class="m">Grade</span></th>
+                  <td>생성한 <strong>답변</strong> — 근거에 기반하나?</td></tr>
+            </table>
+          </div>
+        </div>
+        <pre style="margin-top:24px">validate  →  <span class="key">Relevance</span>  검색 자료의 <span class="good">관련성</span>만 본다        <span class="dim">gpt-4o-mini</span>
+final     →  <span class="key">Grade</span>      생성된 답변이 <span class="good">근거에 기반</span>하는지   <span class="dim">탈락하면 1회 재생성</span></pre>
+      </div>
+      <div class="foot"><span>인사이트 ② 평가자를 나눠라</span><span class="no">07</span></div>
+    </section>
+
+    <!-- ══ 8. 인사이트 ③ ════════════════════════════════ -->
+    <section class="slide" hidden>
+      <p class="eyebrow">인사이트 3 / 3</p>
+      <h2>의도 보존은 프롬프트가 아니라 자료구조 문제였다</h2>
+      <p class="dek">“목록 보여주고, 그중 매출 수치 알려줘” — 계획이 <span class="m">[파일작업, 파일작업]</span>으로 나온다.</p>
+      <div class="body cols c2" style="display:grid">
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <pre><span class="dim">// 딕셔너리로 들고 있었을 때</span>
+plan    = ["파일작업", "파일작업"]
+queries = { "파일작업": "매출 수치 알려줘" }
+          <span class="bad">↑ 뒤 단계가 앞 단계 쿼리를 덮어썼다</span>
+
+<span class="bad">"목록 보여줘"가 사라지고 같은 작업이 두 번 돌았다.</span></pre>
+          <pre><span class="dim">// 인덱스가 일치하는 평행 리스트로</span>
+plan    = ["파일작업",    "파일작업"]
+queries = ["목록 보여줘", "매출 수치 알려줘"]
+          <span class="good">↑ validate가 둘을 항상 같이 pop(0)</span></pre>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div class="panel">
+            <h3>같은 뿌리의 두 번째 버그</h3>
+            <p>완료 판정을 <span class="m">label not in plan</span>으로 하면
+               <strong>중복 라벨을 구분하지 못한다.</strong>
+               <span class="m">retry_num</span> 기준으로 바꿨다 — supervisor가 작업을 넘길 때 0으로 초기화하고,
+               validate는 재시도할 때만 올린다. 따라서 <span class="m">retry_num &gt; 0</span>이면 아직 안 끝난 것.</p>
+          </div>
+          <div class="panel lift">
+            <h3>배운 것</h3>
+            <p>교재 레퍼런스는 이 문제를 <strong>프롬프트로</strong> 방어했다.
+               같은 증상이 <strong>자료구조 층위</strong>에서 똑같이 나타났고,
+               거기서 고치는 편이 확실했다.</p>
+            <p class="note">프롬프트로 막은 버그는 모델을 바꾸면 다시 난다.</p>
+          </div>
+        </div>
+      </div>
+      <div class="foot"><span>인사이트 ③ 계획의 자료구조</span><span class="no">08</span></div>
+    </section>
+
+    <!-- ══ 9. 교재 A2A와의 선택 ═════════════════════════ -->
+    <section class="slide" hidden>
+      <p class="eyebrow">설계 선택</p>
+      <h2>어디에 프로세스를 쪼갤지 실측으로 정했다</h2>
+      <p class="dek">교재 CHAP11은 A2A 4프로세스로 간다. 같은 골격을 두 프로젝트에 적용해 보고 다르게 판단했다.</p>
+      <div class="body">
+        <div class="cols c2">
+          <div class="panel">
+            <p class="label">교재 레퍼런스</p>
+            <h3>A2A · 4개 프로세스</h3>
+            <p><span class="m">10010–10013</span> 포트 4개, Supabase pgvector, Google Drive.
+               프로세스가 갈리니 <strong>병렬 실행이 가능</strong>하지만 띄울 게 많다.</p>
+            <p class="note"><span class="num">4,488</span> LOC · 26개 파일</p>
+          </div>
+          <div class="panel lift">
+            <p class="label">universal_agent</p>
+            <h3>단일 프로세스 · stdio MCP</h3>
+            <p>계획 → 검색 → 저장은 <strong>앞 단계 결과에 의존</strong>한다.
+               순차 의존이 있는 구간을 쪼개면 통신 비용만 늘고 얻는 게 없다.</p>
+            <p class="note"><span class="num">2,307</span> LOC · 포트 0개</p>
+          </div>
+        </div>
+        <div class="panel" style="margin-top:24px;flex-direction:row;align-items:center;gap:28px">
+          <div style="flex:none">
+            <p class="label" style="margin-bottom:6px">quiz_generator · 채점 4문항</p>
+            <div class="stat">
+              <span class="big" style="color:var(--faint)">6.2</span>
+              <span class="unit">초</span>
+              <span class="big" style="color:var(--accent);padding:0 6px">→</span>
+              <span class="big">2.1</span>
+              <span class="unit">초</span>
+            </div>
+          </div>
+          <p style="margin:0;font-size:15px;line-height:1.6;color:var(--ink-2)">
+            <strong>병렬성이 실제로 돈이 되는 곳에는 A2A를 썼다.</strong>
+            채점은 문항끼리 의존이 없어서 프로세스를 쪼개면 그대로 3배가 된다.
+            두 경로가 <span class="m">grade_one</span> / <span class="m">summarize</span>를 공유하므로 결과는 완전히 같다.
+          </p>
+        </div>
+      </div>
+      <div class="foot"><span>설계 선택 — A2A를 어디에 쓸 것인가</span><span class="no">09</span></div>
+    </section>
+
+    <!-- ══ 10. 한계와 다음 ══════════════════════════════ -->
+    <section class="slide" hidden>
+      <p class="eyebrow">한계와 다음</p>
+      <h2>아직 못 한 것</h2>
+      <p class="dek">발표 준비 중 실행 로그에서 하나를 더 찾았다. 아래 세 번째 항목.</p>
+      <div class="body">
+        <ul class="pts">
+          <li><b>계획은 순차 실행이다.</b> 웹과 문서는 서로 의존이 없는데도 하나씩 돈다.
+              앞 장의 <span class="m">6.2 → 2.1초</span>가 그대로 적용될 구간 — A2A로 분리하면 병렬화된다.</li>
+          <li><b>벡터스토어가 인메모리다.</b> 프로세스가 죽으면 색인이 사라진다.
+              <span class="m">Chroma(persist_directory=…)</span>로 교체하면 나머지 코드는 그대로다.</li>
+          <li><b>체크포인터는 대화를 잇지만 증거까지 잇는다.</b>
+              같은 <span class="m">thread_id</span>를 쓰면 이전 질문의 검색 결과가 다음 답변의 근거에 섞인다
+              — 실행 로그에서 <span class="m">웹 4건</span>을 찾았는데 <span class="m">8건</span>으로 집계돼 발견했다.
+              <span class="m">quiz_generator</span>에서는 이게 <em>기능</em>이었지만(부족분만 재출제) 범용 에이전트에서는 <em>결함</em>이다.</li>
+        </ul>
+        <div class="panel lift" style="margin-top:28px">
+          <h3>가져가는 한 줄</h3>
+          <p style="font-size:16px">
+            <strong>무엇을 누적하고 무엇을 리셋할지는 프레임워크가 아니라 도메인이 정한다.</strong>
+            같은 체크포인터, 같은 골격인데 한쪽에서는 기능이고 한쪽에서는 버그였다.
+          </p>
+        </div>
+      </div>
+      <div class="foot"><span>한계와 다음</span><span class="no">10</span></div>
+    </section>
+
+  </div>
+</div>
+
+<div id="hud">
+  <button id="prev" type="button" aria-label="이전 슬라이드">←</button>
+  <span id="count">1 / 10</span>
+  <button id="next" type="button" aria-label="다음 슬라이드">→</button>
+</div>
+
+<script>
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var stage  = document.getElementById('stage');
+  var count  = document.getElementById('count');
+  var i = 0;
+
+  function show(n) {
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach(function (s, k) { s.hidden = k !== i; });
+    count.textContent = (i + 1) + ' / ' + slides.length;
+    try { location.hash = String(i + 1); } catch (e) {}
+  }
+
+  function fit() {
+    var pad = 32;
+    var s = Math.min((innerWidth - pad) / 1280, (innerHeight - pad) / 720);
+    stage.style.setProperty('--s', s);
+  }
+
+  addEventListener('resize', fit);
+  addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { show(i + 1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { show(i - 1); e.preventDefault(); }
+    else if (e.key === 'Home') { show(0); }
+    else if (e.key === 'End') { show(slides.length - 1); }
+    else if (e.key === 'f' || e.key === 'F') {
+      if (document.fullscreenElement) { document.exitFullscreen(); }
+      else if (document.documentElement.requestFullscreen) { document.documentElement.requestFullscreen(); }
+    }
+  });
+  document.getElementById('prev').addEventListener('click', function () { show(i - 1); });
+  document.getElementById('next').addEventListener('click', function () { show(i + 1); });
+
+  fit();
+  show(parseInt(String(location.hash).slice(1), 10) - 1 || 0);
+</script>
