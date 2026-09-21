@@ -1,0 +1,125 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720" font-family="Pretendard, 'Malgun Gothic', '맑은 고딕', system-ui, sans-serif">
+  <rect width="1280" height="720" fill="#ffffff"/>
+
+  <!-- ══ 제목 ══════════════════════════════════════════ -->
+  <text x="40" y="46" font-size="25" font-weight="700" fill="#18181b">범용 멀티 에이전트 — 웹 검색 · RAG · 파일 관리</text>
+  <text x="40" y="70" font-size="13" fill="#71717a">LangGraph 단일 프로세스 · stdio MCP · Streamlit  |  supervisor가 한 요청을 작업 단위로 쪼개 세 축에 배분한다</text>
+
+  <!-- ══ 되돌아가는 흐름 (회색 점선) ═══════════════════ -->
+  <!-- supervisor → final : plan이 비었을 때 -->
+  <path d="M530,294 L530,124 L1110,124 L1110,285" fill="none" stroke="#94a3b8" stroke-width="2" stroke-dasharray="7 5"/>
+  <polygon points="1105,276 1110,285 1115,276" fill="#94a3b8"/>
+  <text x="820" y="116" font-size="11.5" fill="#64748b" text-anchor="middle">plan이 비면 → 최종 답변으로</text>
+
+  <!-- validate → supervisor : 작업 완료 -->
+  <path d="M890,366 L890,520 L458,520 L458,375" fill="none" stroke="#94a3b8" stroke-width="2" stroke-dasharray="7 5"/>
+  <polygon points="453,384 458,375 463,384" fill="#94a3b8"/>
+  <text x="674" y="540" font-size="11.5" fill="#64748b" text-anchor="middle">작업 완료 → 다음 작업 배정  (완료 판정 기준은 retry_num)</text>
+
+  <!-- ══ 재시도 흐름 (주황 점선) ═══════════════════════ -->
+  <path d="M946,294 L946,172 L762,172 L762,205" fill="none" stroke="#d97706" stroke-width="2" stroke-dasharray="7 5"/>
+  <polygon points="757,196 762,205 767,196" fill="#d97706"/>
+  <text x="936" y="164" font-size="11.5" fill="#d97706" text-anchor="end">근거 부족 → 같은 축으로 재시도 (작업당 ≤ 2회)</text>
+
+  <!-- ══ 메인 흐름 (검정 실선) ═════════════════════════ -->
+  <line x1="190" y1="330" x2="213" y2="330" stroke="#3f3f46" stroke-width="2"/>
+  <polygon points="213,325 222,330 213,335" fill="#3f3f46"/>
+
+  <line x1="382" y1="330" x2="405" y2="330" stroke="#3f3f46" stroke-width="2"/>
+  <polygon points="405,325 414,330 405,335" fill="#3f3f46"/>
+
+  <!-- supervisor → 워커 3축 (팬아웃) -->
+  <path d="M574,330 L590,330 M590,248 L590,412 M590,248 L597,248 M590,330 L597,330 M590,412 L597,412" fill="none" stroke="#3f3f46" stroke-width="2"/>
+  <polygon points="597,243 606,248 597,253" fill="#3f3f46"/>
+  <polygon points="597,325 606,330 597,335" fill="#3f3f46"/>
+  <polygon points="597,407 606,412 597,417" fill="#3f3f46"/>
+
+  <!-- 워커 3축 → validate (팬인) -->
+  <path d="M806,248 L822,248 M806,330 L822,330 M806,412 L822,412 M822,248 L822,412 M822,330 L829,330" fill="none" stroke="#3f3f46" stroke-width="2"/>
+  <polygon points="829,325 838,330 829,335" fill="#3f3f46"/>
+
+  <!-- final → 산출물 -->
+  <line x1="1110" y1="366" x2="1110" y2="377" stroke="#3f3f46" stroke-width="2"/>
+  <polygon points="1105,377 1110,386 1115,377" fill="#3f3f46"/>
+
+  <!-- ══ A. 사용자 요청 ════════════════════════════════ -->
+  <rect x="40" y="294" width="150" height="72" rx="8" fill="#f4f4f5" stroke="#a1a1aa" stroke-width="1.5"/>
+  <text x="115" y="322" font-size="13.5" font-weight="700" fill="#18181b" text-anchor="middle">사용자 요청</text>
+  <text x="115" y="340" font-size="10.5" fill="#71717a" text-anchor="middle">Streamlit · 자연어 한 문장</text>
+  <text x="115" y="355" font-size="10.5" fill="#71717a" text-anchor="middle">순서는 지정하지 않는다</text>
+
+  <!-- ══ B. planning ═══════════════════════════════════ -->
+  <rect x="222" y="294" width="160" height="72" rx="8" fill="#fafafa" stroke="#3f3f46" stroke-width="2"/>
+  <text x="302" y="322" font-size="13.5" font-weight="700" fill="#18181b" text-anchor="middle">planning</text>
+  <text x="302" y="340" font-size="10.5" fill="#52525b" text-anchor="middle">gpt-4o · TaskPlan 구조화 출력</text>
+  <text x="302" y="355" font-size="10.5" fill="#52525b" text-anchor="middle">plan[] · queries[] 평행 리스트</text>
+
+  <!-- ══ C. supervisor ═════════════════════════════════ -->
+  <rect x="414" y="294" width="160" height="72" rx="8" fill="#fafafa" stroke="#3f3f46" stroke-width="2"/>
+  <text x="494" y="322" font-size="13.5" font-weight="700" fill="#18181b" text-anchor="middle">supervisor</text>
+  <text x="494" y="340" font-size="10.5" fill="#52525b" text-anchor="middle">gpt-4o-mini · Router 도구</text>
+  <text x="494" y="355" font-size="10.5" fill="#52525b" text-anchor="middle">한 번에 작업 1개만 배정</text>
+
+  <!-- ══ D. 워커 3축 ═══════════════════════════════════ -->
+  <text x="606" y="199" font-size="11.5" font-weight="600" fill="#71717a">워커 3축</text>
+
+  <rect x="606" y="214" width="200" height="68" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+  <text x="706" y="238" font-size="13" font-weight="700" fill="#1e3a8a" text-anchor="middle">웹 검색</text>
+  <text x="706" y="255" font-size="10.5" fill="#1d4ed8" text-anchor="middle">Tavily Search API</text>
+  <text x="706" y="270" font-size="10.5" fill="#60a5fa" text-anchor="middle">키가 없으면 축에서 자동 제외</text>
+
+  <rect x="606" y="296" width="200" height="68" rx="8" fill="#f5f3ff" stroke="#7c3aed" stroke-width="2"/>
+  <text x="706" y="320" font-size="13" font-weight="700" fill="#4c1d95" text-anchor="middle">문서 검색 (RAG)</text>
+  <text x="706" y="337" font-size="10.5" fill="#6d28d9" text-anchor="middle">PDF 청킹 → 인메모리 벡터 검색</text>
+  <text x="706" y="352" font-size="10.5" fill="#a78bfa" text-anchor="middle">스캔 페이지는 OCR MCP로 폴백</text>
+
+  <rect x="606" y="378" width="200" height="68" rx="8" fill="#ecfdf5" stroke="#059669" stroke-width="2"/>
+  <text x="706" y="402" font-size="13" font-weight="700" fill="#064e3b" text-anchor="middle">파일 관리</text>
+  <text x="706" y="419" font-size="10.5" fill="#047857" text-anchor="middle">file MCP 서버 (stdio) · 도구 5종</text>
+  <text x="706" y="434" font-size="10.5" fill="#34d399" text-anchor="middle">workspace 밖으로 못 나간다</text>
+
+  <!-- ══ E. validate ═══════════════════════════════════ -->
+  <rect x="838" y="294" width="160" height="72" rx="8" fill="#fffbeb" stroke="#d97706" stroke-width="2"/>
+  <text x="918" y="322" font-size="13.5" font-weight="700" fill="#78350f" text-anchor="middle">validate</text>
+  <text x="918" y="340" font-size="10.5" fill="#b45309" text-anchor="middle">Relevance 이진 채점</text>
+  <text x="918" y="355" font-size="10.5" fill="#b45309" text-anchor="middle">관련 없는 자료는 폐기</text>
+
+  <!-- ══ F. final ══════════════════════════════════════ -->
+  <rect x="1030" y="294" width="160" height="72" rx="8" fill="#fafafa" stroke="#18181b" stroke-width="2.4"/>
+  <text x="1110" y="322" font-size="13.5" font-weight="700" fill="#18181b" text-anchor="middle">final</text>
+  <text x="1110" y="340" font-size="10.5" fill="#52525b" text-anchor="middle">gpt-4o · 확보한 근거만으로 생성</text>
+  <text x="1110" y="355" font-size="10.5" fill="#52525b" text-anchor="middle">Grade 환각 검사 → 1회 재생성</text>
+
+  <!-- ══ G. 산출물 ═════════════════════════════════════ -->
+  <rect x="1030" y="386" width="160" height="50" rx="8" fill="#f4f4f5" stroke="#a1a1aa" stroke-width="1.5"/>
+  <text x="1110" y="406" font-size="12" font-weight="700" fill="#18181b" text-anchor="middle">답변 + 실제 파일</text>
+  <text x="1110" y="423" font-size="10.5" fill="#71717a" text-anchor="middle">workspace/*.md</text>
+
+  <!-- ══ 범례 ══════════════════════════════════════════ -->
+  <line x1="60" y1="470" x2="96" y2="470" stroke="#3f3f46" stroke-width="2"/>
+  <polygon points="96,465 105,470 96,475" fill="#3f3f46"/>
+  <text x="115" y="474" font-size="11" fill="#52525b">기본 흐름</text>
+
+  <line x1="60" y1="494" x2="105" y2="494" stroke="#94a3b8" stroke-width="2" stroke-dasharray="7 5"/>
+  <text x="115" y="498" font-size="11" fill="#52525b">되돌아가는 흐름</text>
+
+  <line x1="60" y1="518" x2="105" y2="518" stroke="#d97706" stroke-width="2" stroke-dasharray="7 5"/>
+  <text x="115" y="522" font-size="11" fill="#52525b">재시도</text>
+
+  <!-- ══ 하단 실측 스트립 ══════════════════════════════ -->
+  <rect x="40" y="576" width="1200" height="118" rx="10" fill="#fafafa" stroke="#e4e4e7" stroke-width="1.5"/>
+  <text x="60" y="600" font-size="12.5" font-weight="700" fill="#18181b">실측 — 한 문장이 세 축을 모두 통과한 실행</text>
+  <text x="60" y="621" font-size="11" fill="#52525b">“첨부한 리포트에서 하반기 동남아 진출 계획을 찾고, 웹에서 동남아 물류 시장 최신 동향을 찾아서, 비교해서 strategy_brief2.md로 저장해줘”</text>
+
+  <rect x="60" y="634" width="380" height="44" rx="6" fill="#f5f3ff" stroke="#ddd6fe" stroke-width="1.2"/>
+  <text x="74" y="652" font-size="11" font-weight="700" fill="#4c1d95">RAG  “목표 연매출 680억원”</text>
+  <text x="74" y="668" font-size="10.5" fill="#6d28d9">업로드한 PDF 안에만 있는 사실</text>
+
+  <rect x="450" y="634" width="380" height="44" rx="6" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1.2"/>
+  <text x="464" y="652" font-size="11" font-weight="700" fill="#1e3a8a">웹  “물류성과지수 아세안 5위권”</text>
+  <text x="464" y="668" font-size="10.5" fill="#1d4ed8">PDF에 없음 — 웹에서 방금 가져온 것</text>
+
+  <rect x="840" y="634" width="380" height="44" rx="6" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1.2"/>
+  <text x="854" y="652" font-size="11" font-weight="700" fill="#064e3b">파일  strategy_brief2.md 생성</text>
+  <text x="854" y="668" font-size="10.5" fill="#047857">결론 문단은 두 출처를 섞어 새로 쓴 문장</text>
+</svg>
